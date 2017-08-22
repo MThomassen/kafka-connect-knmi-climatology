@@ -17,12 +17,11 @@ case class KnmiClimatologySourceConfig(props: java.util.Map[String, String])
 
   val weatherStations: Set[WeatherStation] = getList(WEATHERSTATIONS).asScala.map(id => WeatherStation(id)).toSet
 
-  val startTimestamp: OffsetDateTime = {
-    if (getBoolean(START_NOW)) OffsetDateTime.now(ZoneOffset.UTC)
-    else Instant.ofEpochSecond(getLong(START_EPOCHSECOND)).atOffset(ZoneOffset.UTC)
-  }
+  val startTimestamp: OffsetDateTime = Instant.ofEpochSecond(getLong(START_EPOCHSECOND)).atOffset(ZoneOffset.UTC)
 
-  val interval: Duration = Duration.ofSeconds(getLong(INTERVAL_SECONDS))
+  val maxPollingInterval: Duration = Duration.ofSeconds(getLong(MAX_POLLING_INTERVAL_SECONDS))
+
+  val maxDataInterval: Duration = Duration.ofSeconds(getLong(MAX_DATA_INTERVAL_SECONDS))
 
   def splitTasksConfig(maxTasks: Int): util.List[util.Map[String, String]] = {
     weatherStations
@@ -37,20 +36,21 @@ case class KnmiClimatologySourceConfig(props: java.util.Map[String, String])
       .asJava
   }
 
-  assert(interval.toHours >= 1, "Interval should be at least 1 hour")
+  assert(maxPollingInterval.toHours >= 3, "Interval should be at least 3 hour (don't stress the KNMI API)")
 }
 
 object KnmiClimatologySourceConfig {
   final val TOPIC_NAME = "topic.name"
   final val WEATHERSTATIONS = "connect.knmi.climatology.weatherstations"
-  final val START_NOW = "connect.knmi.climatology.start.now"
   final val START_EPOCHSECOND = "connect.knmi.climatology.start.epochsecond"
-  final val INTERVAL_SECONDS = "connect.knmi.climatology.intervalseconds"
+  final val MAX_POLLING_INTERVAL_SECONDS = "connect.knmi.climatology.maxpollingintervalseconds"
+  final val MAX_DATA_INTERVAL_SECONDS = "connect.knmi.climatology.maxdataintervalseconds"
+
 
   val definition: ConfigDef = new ConfigDef()
     .define(TOPIC_NAME, Type.STRING, "knmi-climatology", Importance.HIGH, "Name of the Kafka topic to write to")
     .define(WEATHERSTATIONS, Type.LIST, Importance.HIGH, "Weather Station ID's, see: http://projects.knmi.nl/klimatologie/metadata/index.html")
-    .define(START_NOW, Type.BOOLEAN, true, Importance.MEDIUM, "Start pulling data from current time onwards")
-    .define(START_EPOCHSECOND, Type.LONG, 0, Importance.MEDIUM, "Start pulling data of timestamp")
-    .define(INTERVAL_SECONDS, Type.LONG, 21600, Importance.HIGH, "Data gathering interval in seconds")
+    .define(START_EPOCHSECOND, Type.LONG, OffsetDateTime.now().toEpochSecond, Importance.MEDIUM, "Start pulling data since timestamp (now if empty)")
+    .define(MAX_POLLING_INTERVAL_SECONDS, Type.LONG, 21600, Importance.HIGH, "Max data polling interval in seconds")
+    .define(MAX_DATA_INTERVAL_SECONDS, Type.LONG, 86400, Importance.HIGH, "Max data interval in seconds")
 }

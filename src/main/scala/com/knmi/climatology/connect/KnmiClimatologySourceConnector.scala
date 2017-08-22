@@ -11,7 +11,7 @@ import org.apache.kafka.connect.source.SourceConnector
 
 import scala.util.{Failure, Success, Try}
 
-class KnmiKlimatologieSourceConnector extends SourceConnector with StrictLogging {
+class KnmiClimatologySourceConnector extends SourceConnector with StrictLogging {
 
   var sourceConfig: Option[KnmiClimatologySourceConfig] = None
 
@@ -19,7 +19,7 @@ class KnmiKlimatologieSourceConnector extends SourceConnector with StrictLogging
 
   override def config(): ConfigDef = KnmiClimatologySourceConfig.definition
 
-  override def taskClass(): Class[_ <: Task] = classOf[KnmiKlimatologieSourceTask]
+  override def taskClass(): Class[_ <: Task] = classOf[KnmiClimatologySourceTask]
 
   override def start(props: util.Map[String, String]): Unit = {
     logger.info("Connector starting")

@@ -14,7 +14,7 @@ import org.apache.kafka.connect.source.{SourceRecord, SourceTask}
 import scala.collection.JavaConverters._
 import scala.concurrent.{Await, Future}
 
-class KnmiKlimatologieSourceTask extends SourceTask with StrictLogging {
+class KnmiClimatologySourceTask extends SourceTask with StrictLogging {
 
   var taskConfig: Option[KnmiClimatologySourceConfig] = None
 
@@ -41,9 +41,9 @@ class KnmiKlimatologieSourceTask extends SourceTask with StrictLogging {
     }
 
     if (sourceRecords.isEmpty) {
-      logger.info(s"Sleeping for ${taskConfig.get.interval.getSeconds} seconds..")
+      logger.info(s"Sleeping for ${taskConfig.get.maxPollingInterval.getSeconds} seconds..")
 
-      Thread.sleep(taskConfig.get.interval.toMillis)
+      Thread.sleep(taskConfig.get.maxPollingInterval.toMillis)
 
       util.Collections.emptyList()
     } else {
@@ -63,14 +63,14 @@ class KnmiKlimatologieSourceTask extends SourceTask with StrictLogging {
         ZoneId.systemDefault)
     }
 
-    if (startTsp.plus(taskConfig.get.interval).isBefore(OffsetDateTime.now())) {
+    if (startTsp.plus(taskConfig.get.maxDataInterval).isBefore(OffsetDateTime.now())) {
       import system.dispatcher
 
       val apiResults = Future.sequence(
         KnmiClimatologyHourDataCommand.forRange(
           weatherStation = stn,
           fromTsp = startTsp,
-          toTsp = startTsp.plus(taskConfig.get.interval))
+          toTsp = startTsp.plus(taskConfig.get.maxDataInterval))
         .map(cmd => {logger.info(s"Pulling KNMI Climatology data [${cmd.weatherStation.id} - ${cmd.date} - ${cmd.fromHour}:${cmd.toHour}]"); cmd})
         .map(client.handle)
       )

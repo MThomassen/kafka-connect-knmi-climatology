@@ -14,9 +14,9 @@ class KnmiKlimatologieSourceConfigSuite extends WordSpecLike with Matchers {
     val props = new java.util.HashMap[String, String]()
     props.put(KnmiClimatologySourceConfig.TOPIC_NAME, "knmi")
     props.put(KnmiClimatologySourceConfig.WEATHERSTATIONS, "1,2,3,4,5")
-    props.put(KnmiClimatologySourceConfig.START_NOW, "false")
     props.put(KnmiClimatologySourceConfig.START_EPOCHSECOND, "1483232400")
-    props.put(KnmiClimatologySourceConfig.INTERVAL_SECONDS, "21600")
+    props.put(KnmiClimatologySourceConfig.MAX_POLLING_INTERVAL_SECONDS, "21600")
+    props.put(KnmiClimatologySourceConfig.MAX_DATA_INTERVAL_SECONDS, "86400")
 
     "parse provided weather station id's" in {
       val config = KnmiClimatologySourceConfig(props)
@@ -36,23 +36,30 @@ class KnmiKlimatologieSourceConfigSuite extends WordSpecLike with Matchers {
       assert(config.topicName === "knmi")
     }
 
-    "parse provided interval" in {
+    "parse provided polling interval" in {
       val config = KnmiClimatologySourceConfig(props)
 
-      assert(config.interval.getSeconds === 21600)
+      assert(config.maxPollingInterval.getSeconds === 21600)
     }
 
-    "interpret start timestamp for 'start.now=false'" in {
+    "parse provided data interval" in {
+      val config = KnmiClimatologySourceConfig(props)
+
+      assert(config.maxDataInterval.getSeconds === 86400)
+    }
+
+    "parse start timestamp" in {
       val config = KnmiClimatologySourceConfig(props)
 
       assert(config.startTimestamp.isEqual(Instant.ofEpochSecond(1483232400).atOffset(ZoneOffset.UTC)))
     }
 
-    "interpret start timestamp for 'start.now=true'" in {
-      val newProps = new java.util.HashMap[String, String](props)
-      newProps.put(KnmiClimatologySourceConfig.START_NOW, "true")
+    "interpret optional configs" in {
+      val emptyProps = new java.util.HashMap[String, String]()
+      emptyProps.put(KnmiClimatologySourceConfig.TOPIC_NAME, "knmi")
+      emptyProps.put(KnmiClimatologySourceConfig.WEATHERSTATIONS, "1,2,3,4,5")
 
-      val config = KnmiClimatologySourceConfig(newProps)
+      val config = KnmiClimatologySourceConfig(emptyProps)
 
       val diff = java.time.Duration.between(
         config.startTimestamp,
@@ -68,8 +75,6 @@ class KnmiKlimatologieSourceConfigSuite extends WordSpecLike with Matchers {
     val props = new java.util.HashMap[String, String]()
     props.put(KnmiClimatologySourceConfig.TOPIC_NAME, "knmi")
     props.put(KnmiClimatologySourceConfig.WEATHERSTATIONS, "1,2,3,4,5")
-    props.put(KnmiClimatologySourceConfig.START_NOW, "false")
-    props.put(KnmiClimatologySourceConfig.START_EPOCHSECOND, "1483232400")
 
     val config = KnmiClimatologySourceConfig(props)
 
