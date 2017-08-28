@@ -8,9 +8,11 @@ import org.apache.kafka.connect.data.{Schema, SchemaBuilder, Struct}
 import org.apache.kafka.connect.source.SourceRecord
 
 object KnmiClimatologyConnectModel {
-  val schema: Schema = SchemaBuilder.struct().name("knmiclimatologymeasurement")
+  final val keySchema: Schema = SchemaBuilder.struct().name("knmiclimatologymeasurementkey")
     .field("weerstationId", Schema.STRING_SCHEMA)
     .field("timestamp", Schema.INT64_SCHEMA)
+
+  final val valueSchema: Schema = SchemaBuilder.struct().name("knmiclimatologymeasurement")
     .field("windrichting", Schema.OPTIONAL_INT32_SCHEMA)
     .field("windsnelheidLaatsteUur", Schema.OPTIONAL_INT32_SCHEMA)
     .field("windsnelheidLaatste10Minuten", Schema.OPTIONAL_INT32_SCHEMA)
@@ -36,9 +38,11 @@ object KnmiClimatologyConnectModel {
     .build()
 
   def toSourceRecord(measurement: KnmiClimatologyMeasurement, topic: String):  SourceRecord = {
-    val struct = new Struct(schema)
+    val keyStruct = new Struct(keySchema)
       .put("weerstationId", measurement.weerstationId)
       .put("timestamp", measurement.timestamp)
+
+    val valueStruct = new Struct(valueSchema)
       .put("windrichting", measurement.windrichting.getOrElse(null))
       .put("windsnelheidLaatsteUur", measurement.windsnelheidLaatsteUur.getOrElse(null))
       .put("windsnelheidLaatste10Minuten", measurement.windsnelheidLaatste10Minuten.getOrElse(null))
@@ -63,21 +67,21 @@ object KnmiClimatologyConnectModel {
       .put("isIjsvormingLaatsteUur", measurement.isIjsvormingLaatsteUur.getOrElse(null))
 
     new SourceRecord(
-      weatherStationPartitionKey(measurement.weerstationId),
+      weatherStationSourcePartitionKey(measurement.weerstationId),
       offset(measurement),
       topic,
-      Schema.STRING_SCHEMA,
-      measurement.weerstationId,
-      schema,
-      struct
+      keySchema,
+      keyStruct,
+      valueSchema,
+      valueStruct
     )
   }
 
-  final val WEATHERSTATION_PARTITION_KEY = "stn"
+  final val WEATHERSTATION_SOURCE_PARTITION_KEY = "stn"
   final val OFFSET_KEY = "tsp"
 
-  def weatherStationPartitionKey(weatherStationId: String): util.Map[String, String] = {
-    Collections.singletonMap(WEATHERSTATION_PARTITION_KEY, weatherStationId)
+  def weatherStationSourcePartitionKey(weatherStationId: String): util.Map[String, String] = {
+    Collections.singletonMap(WEATHERSTATION_SOURCE_PARTITION_KEY, weatherStationId)
   }
 
   def offset(measurement: KnmiClimatologyMeasurement): util.Map[String, Long] = {

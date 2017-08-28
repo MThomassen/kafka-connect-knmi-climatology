@@ -53,15 +53,14 @@ class KnmiClimatologySourceTask extends SourceTask with StrictLogging {
   }
 
   def pollWeatherStation(stn: WeatherStation): Seq[SourceRecord] = {
-    val startTsp: OffsetDateTime = {
-      val offset = context.offsetStorageReader
-        .offset(KnmiClimatologyConnectModel.weatherStationPartitionKey(stn.id))
+    val offset = context.offsetStorageReader
+      .offset(KnmiClimatologyConnectModel.weatherStationSourcePartitionKey(stn.id))
 
-      if (offset == null) taskConfig.get.startTimestamp
-      else OffsetDateTime.ofInstant(Instant.ofEpochSecond(
-        offset.get(KnmiClimatologyConnectModel.OFFSET_KEY).asInstanceOf[Long]),
-        ZoneId.systemDefault)
-    }
+    val startTsp: OffsetDateTime = if (offset == null) taskConfig.get.startTimestamp
+      else OffsetDateTime.ofInstant(
+        Instant.ofEpochSecond(offset.get(KnmiClimatologyConnectModel.OFFSET_KEY).asInstanceOf[Long]),
+        ZoneId.systemDefault
+      ).plusHours(1)
 
     if (startTsp.plus(taskConfig.get.maxDataInterval).isBefore(OffsetDateTime.now())) {
       import system.dispatcher
