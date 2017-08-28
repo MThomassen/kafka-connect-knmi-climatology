@@ -6,14 +6,16 @@ import akka.http.scaladsl.model._
 import akka.stream.scaladsl.{Framing, Sink}
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.ByteString
+import com.typesafe.scalalogging.StrictLogging
+import org.slf4j.MarkerFactory
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class AkkaKnmiClimatologyClient(implicit system: ActorSystem) extends KnmiClimatologyClient {
-
+class AkkaKnmiClimatologyClient(implicit system: ActorSystem) extends KnmiClimatologyClient with StrictLogging {
   import system.dispatcher
 
+  final private val marker = MarkerFactory.getMarker("KnmiClimatologyClient")
   final private implicit val materializer: ActorMaterializer = ActorMaterializer(ActorMaterializerSettings(system))
   final private val http = Http(system)
   final private val knmiDataUri = Uri("http://projects.knmi.nl/klimatologie/uurgegevens/getdata_uur.cgi")
@@ -21,6 +23,8 @@ class AkkaKnmiClimatologyClient(implicit system: ActorSystem) extends KnmiClimat
   val timeout: Duration = 300 seconds
 
   def handle(command: KnmiClimatologyHourDataCommand): Future[Seq[KnmiClimatologyMeasurement]] = {
+    logger.info(marker, s"Requesting Knmi Hourly Data [${command.weatherStation.id} ${command.date} ${command.fromHour}:${command.toHour}]")
+
     val start = command.formattedStart
     val end = command.formattedEnd
 

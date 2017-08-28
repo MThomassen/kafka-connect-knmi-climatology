@@ -37,7 +37,7 @@ class KnmiClimatologySourceTask extends SourceTask with StrictLogging {
     val sourceRecords = taskConfig match {
       case None => throw new ConnectException("Config not initialized")
       case Some(config) => config.weatherStations
-          .flatMap(stn => pollWeatherStation(stn))
+        .flatMap(stn => pollWeatherStation(stn))
     }
 
     if (sourceRecords.isEmpty) {
@@ -66,22 +66,21 @@ class KnmiClimatologySourceTask extends SourceTask with StrictLogging {
     if (startTsp.plus(taskConfig.get.maxDataInterval).isBefore(OffsetDateTime.now())) {
       import system.dispatcher
 
-      val apiResults = Future.sequence(
-        KnmiClimatologyHourDataCommand.forRange(
-          weatherStation = stn,
-          fromTsp = startTsp,
-          toTsp = startTsp.plus(taskConfig.get.maxDataInterval))
-        .map(cmd => {logger.info(s"Pulling KNMI Climatology data [${cmd.weatherStation.id} - ${cmd.date} - ${cmd.fromHour}:${cmd.toHour}]"); cmd})
-        .map(client.handle)
-      )
+      val commands = KnmiClimatologyHourDataCommand.forRange(
+        weatherStation = stn,
+        fromTsp = startTsp,
+        toTsp = startTsp.plus(taskConfig.get.maxDataInterval))
 
-      val records = Await.result(apiResults,  client.timeout)
+      val commandResponses = Future.sequence(commands
+            .map(cmd => client.handle(cmd)
+              .recover{
+                  case ex => Seq()
+              }
+            ))
+
+      Await.result(commandResponses, client.timeout)
         .flatten
-        .map(m => KnmiClimatologyConnectModel.toSourceRecord(m, taskConfig.get.topicName))
-
-      logger.info(s"Committing ${records.size} records [${stn.id}]")
-
-      records
+        .map(KnmiClimatologyConnectModel.toSourceRecord(_, taskConfig.get.topicName))
     } else {
       Seq[SourceRecord]()
     }
