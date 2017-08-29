@@ -7,7 +7,7 @@ import akka.util.ByteString
 import com.knmi.climatology.WeatherStation
 
 case class KnmiClimatologyMeasurement(
-  weerstationId: String,
+  weerstation: WeatherStation,
   timestamp: Long,
   windrichting: Option[Int],
   windsnelheidLaatsteUur: Option[Int],
@@ -124,7 +124,7 @@ object KnmiKlimatologieMeasurementFactory {
     val isOnweerLaatsteUur = toBoolean(fields(23))
     val isIjsvormingLaatsteUur = toBoolean(fields(24))
 
-    KnmiClimatologyMeasurement(weerstationId, date, windrichting, windsnelheidLaatsteUur, windsnelheidLaatste10Minuten, hoogsteWindstoot, temperatuur, minimumTemperatuurLaatste6Uur, dauwpuntsTemperatuur, duurZonneschijnLaatsteUur, globaleStraling, duurNeerslagLaatsteUur, neerslagLaatsteUur, luchtdrukZeeniveau, horizontaalZicht, bewolking, relatieveVochtigheid, weercode, weercodeIndicator, isMistLaatsteUur, isRegenLaatsteUur, isSneeuwLaatsteUur, isOnweerLaatsteUur, isIjsvormingLaatsteUur)
+    KnmiClimatologyMeasurement(WeatherStation(weerstationId), date, windrichting, windsnelheidLaatsteUur, windsnelheidLaatste10Minuten, hoogsteWindstoot, temperatuur, minimumTemperatuurLaatste6Uur, dauwpuntsTemperatuur, duurZonneschijnLaatsteUur, globaleStraling, duurNeerslagLaatsteUur, neerslagLaatsteUur, luchtdrukZeeniveau, horizontaalZicht, bewolking, relatieveVochtigheid, weercode, weercodeIndicator, isMistLaatsteUur, isRegenLaatsteUur, isSneeuwLaatsteUur, isOnweerLaatsteUur, isIjsvormingLaatsteUur)
   }
 }
 
