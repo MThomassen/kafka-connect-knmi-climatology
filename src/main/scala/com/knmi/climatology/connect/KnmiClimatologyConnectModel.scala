@@ -39,7 +39,7 @@ object KnmiClimatologyConnectModel {
 
   def toSourceRecord(measurement: KnmiClimatologyMeasurement, topic: String):  SourceRecord = {
     val keyStruct = new Struct(keySchema)
-      .put("weerstationId", measurement.weerstationId)
+      .put("weerstationId", measurement.weerstation.id)
       .put("timestamp", measurement.timestamp)
 
     val valueStruct = new Struct(valueSchema)
@@ -67,7 +67,7 @@ object KnmiClimatologyConnectModel {
       .put("isIjsvormingLaatsteUur", measurement.isIjsvormingLaatsteUur.getOrElse(null))
 
     new SourceRecord(
-      weatherStationSourcePartitionKey(measurement.weerstationId),
+      weatherStationSourcePartitionKey(measurement.weerstation.id),
       offset(measurement),
       topic,
       keySchema,

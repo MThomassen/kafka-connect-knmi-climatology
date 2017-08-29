@@ -1,6 +1,6 @@
 package com.knmi.climatology.client
 
-import java.time.{LocalDate, OffsetDateTime, ZoneOffset}
+import java.time._
 
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
@@ -19,9 +19,6 @@ class KnmiClimatologyClientSuite extends TestKit(ActorSystem("KnmiClimatologyCli
     val client: KnmiClimatologyClient = new AkkaKnmiClimatologyClient()
 
     "handle a request" in {
-      val from = OffsetDateTime.of(2017,1,1,3,0,0,0,ZoneOffset.UTC)
-      val to = OffsetDateTime.of(2017,1,2,0,0,0,0,ZoneOffset.UTC)
-
       val command = KnmiClimatologyHourDataCommand(
         weatherStation = WeatherStation("310"),
         date = LocalDate.of(2017,1,1),
@@ -32,6 +29,18 @@ class KnmiClimatologyClientSuite extends TestKit(ActorSystem("KnmiClimatologyCli
       val measurements = Await.result(client.handle(command), client.timeout)
 
       assert(measurements.size === 24)
+
+      val maxReceivedTimestamp = measurements.map(_.timestamp).max
+
+      assert(maxReceivedTimestamp === LocalDate.of(2017,1,2).atStartOfDay(KnmiDateTimeFormatter.zone).toEpochSecond)
+
+      val nextFrom = OffsetDateTime.ofInstant(Instant.ofEpochSecond(maxReceivedTimestamp), KnmiDateTimeFormatter.zone)
+      val nextTo = OffsetDateTime.ofInstant(Instant.ofEpochSecond(maxReceivedTimestamp), KnmiDateTimeFormatter.zone)
+        .plusDays(1)
+
+      val nextCommands = KnmiClimatologyHourDataCommand.forRange(weatherStation, nextFrom, nextTo)
+
+      assert(nextCommands.toSet === Set(KnmiClimatologyHourDataCommand(weatherStation,LocalDate.of(2017,1,2),1,24)))
     }
   }
 }
