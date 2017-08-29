@@ -36,7 +36,7 @@ class KnmiClimatologySourceTask extends SourceTask with StrictLogging {
   override def poll(): util.List[SourceRecord] = {
     val sourceRecords = taskConfig match {
       case None => throw new ConnectException("Config not initialized")
-      case Some(config) => config.weatherStations
+      case Some(config) => config.weatherStations.par
         .flatMap(stn => pollWeatherStation(stn))
     }
 
